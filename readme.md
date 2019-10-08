@@ -2,6 +2,12 @@
 
 ## Getting started
 
+- Install npm packages
+
+```
+npm install
+```
+
 - Install `parcel`:
 
 ```
