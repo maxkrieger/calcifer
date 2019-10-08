@@ -13,3 +13,5 @@ npm install -g parcel-bundler
 ```
 parcel index.html
 ```
+
+![](https://media.giphy.com/media/Wo0Yw7qwzgQak/giphy.gif)
