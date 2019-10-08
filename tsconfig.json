@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceRoot": "./sketch/",
+    "rootDir": "./sketch/",
+    "sourceMap": true,
+    "module": "es6",
+    "esModuleInterop": true,
+    "noImplicitAny": true
+  }
+}
