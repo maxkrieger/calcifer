@@ -1,4 +1,13 @@
 // https://editor.p5js.org/joeyklee/sketches/liHgeD1eg
+
+
+/// GOOD REAL STUFF
+var textSize = 18;
+var ourProgramWorld = ["(", "apdkle4", "bnJ#21akc", "elephant", ")"]
+
+// "This year, we want to explicitly broaden the type of reflections we receive, to be inclusive of the many different ways we are spending our summers. We’re also going to invite reflections from Masters and Doctoral candidates for the first time. Whether you spent your summer working, studying, travelling, resting, or something entirely different; we’d love to hear about it!"
+
+
 import * as p5 from "p5";
 import Matter from "matter-js";
 export default class Draggy {
@@ -9,17 +18,44 @@ export default class Draggy {
   public ground: Matter.Body;
   public ground2: Matter.Body;
   public boxes: Matter.Composite;
+  public texts: any;
   public ropeA: Matter.Composite;
+  public univers: p5.Font;
   public mouse: Matter.Mouse;
   public canvas: p5.Renderer;
   public p: p5;
   public mouseConstraint: Matter.MouseConstraint;
-  constructor(p: p5, canvas: p5.Renderer) {
+  constructor(p: p5, canvas: p5.Renderer, univers: any) {
+    this.univers = univers;
     this.canvas = canvas;
     this.p = p;
   }
   public setup = () => {
+    this.texts = Matter.Composite.create();
+
+    ourProgramWorld.forEach((word, index: number) => {
+      var bounds = this.univers.textBounds(word, 0, 0, textSize) as any;
+      this.p.print("bounds" +  bounds.w + " "+ bounds.h)
+      
+      var box = Matter.Bodies.rectangle(0, 10,
+        
+        //this.p.width * 0.25+100*index, 10,
+        bounds.w, bounds.h, {
+
+        isStatic: false
+
+      });
+
+      Matter.Composite.add(this.texts, box)
+      
+    
+    });
+    
+    console.log(this.texts)
+
     this.engine = Matter.Engine.create();
+    
+    
     this.boxA = Matter.Bodies.rectangle(this.p.width * 0.25, 10, 40, 40, {
       isStatic: false
     });
@@ -70,8 +106,8 @@ export default class Draggy {
 
     //create a static ground;
     this.ground = Matter.Bodies.rectangle(
-      this.p.width / 2,
-      this.p.height,
+      0,
+      this.p.height/2 - 50,
       this.p.width,
       40,
       {
@@ -80,8 +116,8 @@ export default class Draggy {
       }
     );
     this.ground2 = Matter.Bodies.rectangle(
-      this.p.width / 2,
-      this.p.height,
+      0,
+      this.p.height/2 - 50,
       this.p.width,
       40,
       {
@@ -92,13 +128,14 @@ export default class Draggy {
 
     // add your things to your world;
     Matter.World.add(this.engine.world, [
-      this.boxA,
-      this.boxB,
-      this.circleA,
-      this.boxes,
-      this.ropeA,
+      // this.boxA,
+      // this.boxB,
+      // this.circleA,
+      // this.boxes,
+      // this.ropeA,
       this.ground,
-      this.ground2
+      this.ground2,
+      this.texts
     ] as any);
 
     // ------- add your mouse interactions -------
@@ -121,6 +158,8 @@ export default class Draggy {
     // run the engine
     Matter.Engine.run(this.engine);
   };
+
+  // VIEW
   public draw = () => {
     this.p.background(220);
 
@@ -131,7 +170,7 @@ export default class Draggy {
     this.drawShape(this.circleA);
     this.drawShape(this.ground);
     this.drawShape(this.ground2);
-
+    this.texts.bodies.forEach((b: Matter.Body) => {this.drawText(b)})
     this.boxes.bodies.forEach(b => {
       this.drawShape(b);
     });
@@ -152,6 +191,32 @@ export default class Draggy {
     });
     this.p.endShape(this.p.CLOSE);
   }
+
+  private drawText(feat: Matter.Body) {
+    const { vertices, position, angle } = feat as any;
+
+    this.p.fill(0);
+    //this.p.beginShape();
+    this.p.textFont(this.univers)
+    this.p.textSize( 28 );
+
+    //this.p.print(position.x +", "+ position.y)
+
+
+    // angle
+    this.p.push()
+    // this.p.rotate(angle)
+    this.p.text("word", position.x, position.y);
+    this.p.pop()
+    
+    this.p.beginShape();
+    vertices.forEach(vert => {
+      this.p.vertex(vert.x, vert.y);
+    });
+    this.p.endShape(this.p.CLOSE);
+
+  }
+
   private drawMouse = (mouseConstraint: Matter.MouseConstraint) => {
     if (mouseConstraint.body) {
       var pos = mouseConstraint.body.position;
