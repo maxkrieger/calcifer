@@ -1,17 +1,10 @@
 import p5 from "p5";
 import Draggy from "./draggy";
 
-
-
-
 class Sketch {
-
   public preload = () => {
-    this.univers = this.p.loadFont('assets/UniversLTStd.otf');
-
-console.log("go")
-
-  }
+    this.univers = this.p.loadFont("assets/AnonymousPro-Regular.ttf");
+  };
 
   public draggy: Draggy;
   public p: p5;
@@ -26,8 +19,11 @@ console.log("go")
   }
   public Setup = () => {
     //this.p.noLoop()
-    console.log("yo")
-    this.canvas = this.p.createCanvas(this.p.windowWidth, this.p.windowHeight, this.p.WEBGL);
+    this.canvas = this.p.createCanvas(
+      this.p.windowWidth,
+      this.p.windowHeight
+      // this.p.WEBGL
+    );
     this.draggy = new Draggy(this.p, this.canvas, this.univers);
     this.draggy.setup();
   };
@@ -38,7 +34,7 @@ console.log("go")
 
   public draw = () => {
     //this.p.translate(-this.p.width/2,-this.p.height/2,0); //moves our drawing origin to the top left corner
-    this.p.background(100);
+    this.p.background("#322931");
     this.draggy.draw();
   };
 }
