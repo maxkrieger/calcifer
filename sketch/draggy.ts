@@ -22,7 +22,10 @@ export default class Draggy {
     this.p = p;
     this.exprs = {
       a: "hello",
-      b: "world"
+      b: "world",
+      c: "how",
+      d: "are",
+      e: "U"
     };
   }
   public setup = () => {
@@ -32,14 +35,14 @@ export default class Draggy {
     this.texts = Matter.Composite.create();
 
     Object.keys(this.exprs).forEach((key: string, index: number) => {
-      var bounds = this.univers.textBounds(
+      const bounds = this.univers.textBounds(
         this.exprs[key],
         0,
         0,
         textSize
       ) as any;
 
-      var box = Matter.Bodies.rectangle(
+      const box = Matter.Bodies.rectangle(
         this.p.width * 0.5,
         this.p.height * 0.5,
         bounds.w,
@@ -50,8 +53,21 @@ export default class Draggy {
           frictionAir: 0.2
         }
       );
+      // if (this.texts.bodies.length > 0) {
+      //   const constr = Matter.Constraint.create({
+      //     bodyA: this.texts.bodies[this.texts.bodies.length - 1],
+      //     bodyB: box,
+      //     stiffness: 0.9
+      //   });
+      //   Matter.Composite.add(this.texts, constr);
+      // }
 
       Matter.Composite.add(this.texts, box);
+    });
+
+    Matter.Composites.chain(this.texts, 1, 0, -0.6, 0, {
+      stiffness: 0.5,
+      length: 2
     });
 
     let ropeAGroup = Matter.Body.nextGroup(true);
