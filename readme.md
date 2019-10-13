@@ -17,7 +17,9 @@ npm install -g parcel-bundler
 - Run
 
 ```
-parcel index.html
+npm start
 ```
+
+- Navigate to [`https://localhost:1234/index.html`](https://localhost:1234/index.html)
 
 ![](https://media.giphy.com/media/Wo0Yw7qwzgQak/giphy.gif)
