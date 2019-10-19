@@ -46,7 +46,10 @@ export default class Draggy {
     this.canvas = canvas;
     this.p = p;
     this.exprs = {
-      a: programToExpr(["hello", ["world", ["ok", ["cool"]]]]),
+      a: programToExpr([
+        "it's",
+        ["turtles", ["all", ["the", ["way", ["down"]]]]]
+      ]),
       b: programToExpr(["cons", "bird", ["mouse", "foo"]]),
       c: programToExpr("1")
     };
