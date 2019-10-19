@@ -180,17 +180,19 @@ export default class Draggy {
         let parensNew = [...parens];
         if (index === 0) {
           parensNew = [...parensNew, Paren.LPAREN];
-          if (c.composites.length === 0) {
+          if (c.composites.length === 0 && composite.composites.length > 1) {
             parensNew = parensNew.filter((p: Paren) => p === Paren.LPAREN);
           }
         }
-        if (index === composite.composites.length - 1) {
+        if (
+          index === composite.composites.length - 1 &&
+          composite.composites.length > 1
+        ) {
           parensNew = [...parensNew, Paren.RPAREN];
           if (c.composites.length === 0) {
             parensNew = parensNew.filter((p: Paren) => p === Paren.RPAREN);
           }
         }
-        console.log(c.label, parensNew);
         this.drawComposite(c, parensNew);
       });
     }

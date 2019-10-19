@@ -18,7 +18,7 @@ class Sketch {
     this.p.preload = this.preload;
   }
   public Setup = () => {
-    this.p.noLoop();
+    // this.p.noLoop();
     this.canvas = this.p.createCanvas(
       this.p.windowWidth,
       this.p.windowHeight
