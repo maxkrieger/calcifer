@@ -16,6 +16,11 @@ interface IExpr {
   id: string;
 }
 
+enum Paren {
+  LPAREN = "(",
+  RPAREN = ")"
+}
+
 const exprToString = (program: IExpr): string => {
   if (program.val) {
     return program.val;
@@ -41,8 +46,8 @@ export default class Draggy {
     this.canvas = canvas;
     this.p = p;
     this.exprs = {
-      a: programToExpr(["hello", ["world"]]),
-      b: programToExpr(["cons", "bird", ["mouse"]]),
+      a: programToExpr(["hello", ["world", ["ok", ["cool"]]]]),
+      b: programToExpr(["cons", "bird", ["mouse", "foo"]]),
       c: programToExpr("1")
     };
   }
@@ -61,9 +66,11 @@ export default class Draggy {
   public makeTextComposite = (program: IExpr): Matter.Composite => {
     const str = exprToString(program);
     const bounds = this.univers.textBounds(str, 0, 0, textSize) as any;
-    const composite = Matter.Composite.create();
+    const composite = Matter.Composite.create({
+      label: program.id
+    });
     if (program.val) {
-      return Matter.Composite.add(
+      Matter.Composite.add(
         composite,
         Matter.Bodies.rectangle(
           this.p.width * 0.5,
@@ -72,23 +79,40 @@ export default class Draggy {
           bounds.h,
           {
             isStatic: false,
-            label: program.id,
-            frictionAir: 0.2
+            frictionAir: 0.2,
+            label: program.id
           }
         )
       );
+      return composite;
     }
     const childComposites = program.children.map(this.makeTextComposite);
-    childComposites.forEach((comp: Matter.Composite, index: number) =>
-      Matter.Composite.allBodies(comp).forEach((body: Matter.Body) =>
-        Matter.Composite.add(composite, body)
-      )
-    );
-    Matter.Composites.chain(composite, 1, 0, -0.6, 0, {
-      stiffness: 0.5,
-      length: 2
+    childComposites.forEach((comp: Matter.Composite, index: number) => {
+      Matter.Composite.add(composite, comp);
+      if (index !== 0) {
+        const prevAllBodies = Matter.Composite.allBodies(
+          childComposites[index - 1]
+        );
+        // adapted from https://brm.io/matter-js/docs/files/src_factory_Composites.js.html#l75
+        const bodyA = prevAllBodies[prevAllBodies.length - 1];
+        const bodyB = Matter.Composite.allBodies(comp)[0];
+        const bodyAHeight = bodyA.bounds.max.y - bodyA.bounds.min.y,
+          bodyAWidth = bodyA.bounds.max.x - bodyA.bounds.min.x,
+          bodyBHeight = bodyB.bounds.max.y - bodyB.bounds.min.y,
+          bodyBWidth = bodyB.bounds.max.x - bodyB.bounds.min.x;
+        Matter.Composite.add(
+          composite,
+          Matter.Constraint.create({
+            bodyA,
+            bodyB,
+            pointA: { x: bodyAWidth * 1, y: bodyAHeight * 0 },
+            pointB: { x: bodyBWidth * -0.6, y: bodyBHeight * 0 },
+            length: 2,
+            stiffness: 0.5
+          })
+        );
+      }
     });
-    console.log(composite);
     return composite;
   };
   public setup = () => {
@@ -123,9 +147,9 @@ export default class Draggy {
   public draw = () => {
     this.p.stroke(0);
     this.p.strokeWeight(1);
-    Matter.Composite.allBodies(this.engine.world).forEach((b: Matter.Body) => {
-      this.drawText(b);
-    });
+    this.engine.world.composites.forEach((c: Matter.Composite) =>
+      this.drawComposite(c, [])
+    );
     this.drawMouse(this.mouseConstraint);
   };
 
@@ -138,8 +162,41 @@ export default class Draggy {
     });
     this.p.endShape(this.p.CLOSE);
   }
+  private drawComposite = (
+    composite: Matter.Composite,
+    parens: Paren[] = []
+  ) => {
+    if (composite.composites.length === 0) {
+      if (composite.bodies.length === 1) {
+        this.drawText(composite.bodies[0], parens);
+      } else {
+        console.error(
+          composite.bodies,
+          `ASSERT: this should never be reachable`
+        );
+      }
+    } else {
+      composite.composites.forEach((c: Matter.Composite, index: number) => {
+        let parensNew = [...parens];
+        if (index === 0) {
+          parensNew = [...parensNew, Paren.LPAREN];
+          if (c.composites.length === 0) {
+            parensNew = parensNew.filter((p: Paren) => p === Paren.LPAREN);
+          }
+        }
+        if (index === composite.composites.length - 1) {
+          parensNew = [...parensNew, Paren.RPAREN];
+          if (c.composites.length === 0) {
+            parensNew = parensNew.filter((p: Paren) => p === Paren.RPAREN);
+          }
+        }
+        console.log(c.label, parensNew);
+        this.drawComposite(c, parensNew);
+      });
+    }
+  };
 
-  private drawText(feat: Matter.Body) {
+  private drawText = (feat: Matter.Body, parens: Paren[] = []) => {
     const { angle, vertices, label } = feat as any;
 
     this.p.push();
@@ -150,11 +207,17 @@ export default class Draggy {
     this.p.angleMode(this.p.RADIANS);
     this.p.translate(vertices[3].x, vertices[3].y);
     this.p.rotate(angle);
-    // TODO: recursively render instead
-    const content = exprToString(this.findInAllById(label));
+    let content = exprToString(this.findInAllById(label));
+    parens.forEach((paren: Paren) => {
+      if (paren === Paren.LPAREN) {
+        content = `(${content}`;
+      } else if (paren === Paren.RPAREN) {
+        content = `${content})`;
+      }
+    });
     this.p.text(content, 0, 0);
     this.p.pop();
-  }
+  };
 
   private drawMouse = (mouseConstraint: Matter.MouseConstraint) => {
     if (mouseConstraint.body) {
