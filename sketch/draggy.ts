@@ -3,15 +3,20 @@
 import * as p5 from "p5";
 import Matter from "matter-js";
 import uniqid from "uniqid";
+import s from "my-little-schemer";
 /// GOOD REAL STUFF
 const textSize = 18;
 // "This year, we want to explicitly broaden the type of reflections we receive, to be inclusive of the many different ways we are spending our summers. We’re also going to invite reflections from Masters and Doctoral candidates for the first time. Whether you spent your summer working, studying, travelling, resting, or something entirely different; we’d love to hear about it!"
 
 // https://stackoverflow.com/a/45999529
-export type SProgram = IProgramArray | string;
+type terminal = string | number;
+const isTerminal = (t: any) => typeof t === "string" || typeof t === "number";
+
+export type SProgram = IProgramArray | terminal;
 interface IProgramArray extends Array<SProgram> {}
 interface IExpr {
-  val?: string;
+  val?: terminal;
+  parens: Paren[];
   children: IExpr[];
   id: string;
 }
@@ -22,14 +27,49 @@ enum Paren {
 }
 
 const exprToString = (program: IExpr): string => {
-  if (program.val) {
-    return program.val;
+  if (program.val !== undefined) {
+    return program.val.toString();
   }
   return `(${program.children.map(exprToString).join(" ")})`;
 };
-export const programToExpr = (program: SProgram): IExpr => ({
-  val: typeof program === "string" ? program : undefined,
-  children: typeof program !== "string" ? program.map(programToExpr) : [],
+
+const exprToStringWithParensContext = (exp: IExpr): string => {
+  let content = exprToString(exp);
+  exp.parens.forEach((paren: Paren) => {
+    if (paren === Paren.LPAREN) {
+      content = `(${content}`;
+    } else if (paren === Paren.RPAREN) {
+      content = `${content})`;
+    }
+  });
+  return content;
+};
+
+export const programToExpr = (
+  program: SProgram,
+  parens: Paren[] = []
+): IExpr => ({
+  val: isTerminal(program) ? (program as any) : undefined,
+  parens: isTerminal(program) ? parens : [],
+  children: !isTerminal(program)
+    ? program.map((p: SProgram, index: number) => {
+        let parensNew = [...parens];
+        if (index === 0 && index !== program.length - 1) {
+          parensNew = [...parensNew, Paren.LPAREN];
+          if (isTerminal(p)) {
+            parensNew = parensNew.filter(j => j === Paren.LPAREN);
+          }
+        } else if (index !== 0 && index === program.length - 1) {
+          parensNew = [...parensNew, Paren.RPAREN];
+          if (isTerminal(p)) {
+            parensNew = parensNew.filter(j => j === Paren.RPAREN);
+          }
+        } else if (index === 0 && index === program.length - 1) {
+          parensNew = [...parensNew, Paren.RPAREN, Paren.LPAREN];
+        }
+        return programToExpr(p, parensNew);
+      })
+    : [],
   id: uniqid(`expr-${program.toString()}-`)
 });
 
@@ -50,8 +90,11 @@ export default class Draggy {
         "it's",
         ["turtles", ["all", ["the", ["way", ["down"]]]]]
       ]),
-      b: programToExpr(["cons", "bird", ["mouse", "foo"]]),
-      c: programToExpr("1")
+      abs: programToExpr(
+        s.jSExpression(`((lambda (x) (if (< x 0) (- x) x))(-5))`)
+      ),
+      b: programToExpr(["x", ".", "y"]),
+      e: programToExpr(["+", "1", "2"])
     };
   }
   public findById = (expr: IExpr, id: string): any => {
@@ -67,12 +110,12 @@ export default class Draggy {
       .find((exp: IExpr) => exp !== undefined);
   };
   public makeTextComposite = (program: IExpr): Matter.Composite => {
-    const str = exprToString(program);
+    const str = exprToStringWithParensContext(program);
     const bounds = this.univers.textBounds(str, 0, 0, textSize) as any;
     const composite = Matter.Composite.create({
       label: program.id
     });
-    if (program.val) {
+    if (program.val !== undefined) {
       Matter.Composite.add(
         composite,
         Matter.Bodies.rectangle(
@@ -109,7 +152,7 @@ export default class Draggy {
             bodyA,
             bodyB,
             pointA: { x: bodyAWidth * 1, y: bodyAHeight * 0 },
-            pointB: { x: bodyBWidth * -0.6, y: bodyBHeight * 0 },
+            pointB: { x: bodyBWidth * -0.5, y: bodyBHeight * 0 },
             length: 2,
             stiffness: 0.5
           })
@@ -151,7 +194,7 @@ export default class Draggy {
     this.p.stroke(0);
     this.p.strokeWeight(1);
     this.engine.world.composites.forEach((c: Matter.Composite) =>
-      this.drawComposite(c, [])
+      this.drawComposite(c)
     );
     this.drawMouse(this.mouseConstraint);
   };
@@ -165,13 +208,10 @@ export default class Draggy {
     });
     this.p.endShape(this.p.CLOSE);
   }
-  private drawComposite = (
-    composite: Matter.Composite,
-    parens: Paren[] = []
-  ) => {
+  private drawComposite = (composite: Matter.Composite) => {
     if (composite.composites.length === 0) {
       if (composite.bodies.length === 1) {
-        this.drawText(composite.bodies[0], parens);
+        this.drawText(composite.bodies[0]);
       } else {
         console.error(
           composite.bodies,
@@ -179,29 +219,11 @@ export default class Draggy {
         );
       }
     } else {
-      composite.composites.forEach((c: Matter.Composite, index: number) => {
-        let parensNew = [...parens];
-        if (index === 0) {
-          parensNew = [...parensNew, Paren.LPAREN];
-          if (c.composites.length === 0 && composite.composites.length > 1) {
-            parensNew = parensNew.filter((p: Paren) => p === Paren.LPAREN);
-          }
-        }
-        if (
-          index === composite.composites.length - 1 &&
-          composite.composites.length > 1
-        ) {
-          parensNew = [...parensNew, Paren.RPAREN];
-          if (c.composites.length === 0) {
-            parensNew = parensNew.filter((p: Paren) => p === Paren.RPAREN);
-          }
-        }
-        this.drawComposite(c, parensNew);
-      });
+      composite.composites.forEach(this.drawComposite);
     }
   };
 
-  private drawText = (feat: Matter.Body, parens: Paren[] = []) => {
+  private drawText = (feat: Matter.Body) => {
     const { angle, vertices, label } = feat as any;
 
     this.p.push();
@@ -212,8 +234,9 @@ export default class Draggy {
     this.p.angleMode(this.p.RADIANS);
     this.p.translate(vertices[3].x, vertices[3].y);
     this.p.rotate(angle);
-    let content = exprToString(this.findInAllById(label));
-    parens.forEach((paren: Paren) => {
+    const exp = this.findInAllById(label);
+    let content = exprToString(exp);
+    exp.parens.forEach((paren: Paren) => {
       if (paren === Paren.LPAREN) {
         content = `(${content}`;
       } else if (paren === Paren.RPAREN) {
