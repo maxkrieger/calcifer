@@ -183,6 +183,7 @@ export default class Draggy {
           merged.id
         );
         // TODO: delete danglings
+        // TODO: recompute bounding box lengths
         // TODO: fix paren preservation/recompute them
       }
     }
