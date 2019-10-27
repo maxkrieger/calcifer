@@ -54,6 +54,13 @@ export const programToExpr = (
   children: !isTerminal(program)
     ? program.map((p: SProgram, index: number) => {
         let parensNew = [...parens];
+        if (
+          index !== 0 &&
+          index !== program.length - 1 &&
+          program.some(isTerminal)
+        ) {
+          parensNew = [];
+        }
         if (index === 0 && index !== program.length - 1) {
           parensNew = [...parensNew, Paren.LPAREN];
           if (isTerminal(p)) {
@@ -85,14 +92,14 @@ export default class Draggy {
     this.univers = univers;
     this.canvas = canvas;
     this.p = p;
+    const lmb = s.jSExpression(`((lambda (x) (if (< x 0) (- x) x))(-5))`);
+    console.log(lmb);
     this.exprs = {
       a: programToExpr([
         "it's",
         ["turtles", ["all", ["the", ["way", ["down"]]]]]
       ]),
-      abs: programToExpr(
-        s.jSExpression(`((lambda (x) (if (< x 0) (- x) x))(-5))`)
-      ),
+      abs: programToExpr(lmb),
       b: programToExpr(["x", ".", "y"]),
       e: programToExpr(["+", "1", "2"])
     };
@@ -154,7 +161,7 @@ export default class Draggy {
             pointA: { x: bodyAWidth * 1, y: bodyAHeight * 0 },
             pointB: { x: bodyBWidth * -0.5, y: bodyBHeight * 0 },
             length: 2,
-            stiffness: 0.5
+            stiffness: 0.3
           })
         );
       }
