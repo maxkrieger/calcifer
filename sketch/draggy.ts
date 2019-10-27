@@ -4,6 +4,8 @@ import * as p5 from "p5";
 import Matter from "matter-js";
 import uniqid from "uniqid";
 import s from "my-little-schemer";
+import arith from "my-little-schemer/src/libs/arithmetic";
+arith.loadTo(s);
 /// GOOD REAL STUFF
 const textSize = 18;
 // "This year, we want to explicitly broaden the type of reflections we receive, to be inclusive of the many different ways we are spending our summers. We’re also going to invite reflections from Masters and Doctoral candidates for the first time. Whether you spent your summer working, studying, travelling, resting, or something entirely different; we’d love to hear about it!"
@@ -33,6 +35,9 @@ const exprToString = (program: IExpr): string => {
   return `(${program.children.map(exprToString).join(" ")})`;
 };
 
+const exprToProgram = (program: IExpr): SProgram =>
+  isTerminal(program.val) ? program.val : program.children.map(exprToProgram);
+
 const exprToStringWithParensContext = (exp: IExpr): string => {
   let content = exprToString(exp);
   exp.parens.forEach((paren: Paren) => {
@@ -45,6 +50,7 @@ const exprToStringWithParensContext = (exp: IExpr): string => {
   return content;
 };
 
+// TODO: decompose parens logic into another fn
 export const programToExpr = (
   program: SProgram,
   parens: Paren[] = []
@@ -92,17 +98,19 @@ export default class Draggy {
     this.univers = univers;
     this.canvas = canvas;
     this.p = p;
-    const lmb = s.jSExpression(`((lambda (x) (if (< x 0) (- x) x))(-5))`);
-    console.log(lmb);
+    const lmb = s.jSExpression(`((lambda (x) (if (< x 0) (- x) x)) -5)`);
     this.exprs = {
       a: programToExpr([
         "it's",
         ["turtles", ["all", ["the", ["way", ["down"]]]]]
       ]),
       abs: programToExpr(lmb),
+      nested: programToExpr(s.jSExpression(`(+ 1 (* 2 3))`)),
+      cons: programToExpr(s.jSExpression(`(car (pickle juice))`)),
       b: programToExpr(["x", ".", "y"]),
       e: programToExpr(["+", "1", "2"])
     };
+    console.log(this.evalInPlace("nested", this.exprs.nested));
   }
   public findById = (expr: IExpr, id: string): any => {
     if (expr.id === id) return expr;
@@ -116,6 +124,70 @@ export default class Draggy {
       .map((key: string) => this.findById(this.exprs[key], id))
       .find((exp: IExpr) => exp !== undefined);
   };
+  public evaluable = (program: IExpr) => {
+    const original = s.sExpression(exprToProgram(program));
+    const evaluated = s.evaluate(exprToProgram(program), true, true, false);
+    if (typeof evaluated === "function") {
+      return false;
+    }
+
+    return original !== s.sExpression(evaluated);
+  };
+  public merge = (p1: IExpr, p2: IExpr): IExpr => {
+    if (isTerminal(p1.val) && isTerminal(p2.val)) {
+      if (p1.val === p2.val) {
+        return p1;
+      } else {
+        return { ...p2, id: p1.id };
+      }
+    } else if (isTerminal(p1.val) || isTerminal(p2.val)) {
+      return { ...p2, id: p1.id };
+    } else if (p1.children.length === p2.children.length) {
+      return {
+        ...p1,
+        children: p1.children.map((child: IExpr, index: number) =>
+          this.merge(child, p2.children[index])
+        )
+      };
+    } else {
+      return { ...p1, children: p2.children };
+    }
+  };
+  public replaceById = (
+    originalProgram: IExpr,
+    newProgram: IExpr,
+    id: string
+  ): IExpr => {
+    if (originalProgram.id === id) {
+      return newProgram;
+    }
+    return {
+      ...originalProgram,
+      children: originalProgram.children.map((child: IExpr) =>
+        this.replaceById(child, newProgram, id)
+      )
+    };
+  };
+  public evalInPlace = (programID: string, program: IExpr) => {
+    if (this.evaluable(program)) {
+      const evaluableChildren = program.children.filter(this.evaluable);
+      if (evaluableChildren.length > 0) {
+        this.evalInPlace(programID, evaluableChildren[0]);
+      } else {
+        const result = s.value(exprToProgram(program));
+        const fresh = programToExpr(result);
+        const merged = this.merge(program, fresh);
+        this.exprs[programID] = this.replaceById(
+          this.exprs[programID],
+          merged,
+          merged.id
+        );
+        // TODO: delete danglings
+        // TODO: fix paren preservation/recompute them
+      }
+    }
+  };
+
   public makeTextComposite = (program: IExpr): Matter.Composite => {
     const str = exprToStringWithParensContext(program);
     const bounds = this.univers.textBounds(str, 0, 0, textSize) as any;
@@ -159,7 +231,10 @@ export default class Draggy {
             bodyA,
             bodyB,
             pointA: { x: bodyAWidth * 1, y: bodyAHeight * 0 },
-            pointB: { x: bodyBWidth * -0.5, y: bodyBHeight * 0 },
+            pointB: {
+              x: bodyBWidth * -0.5,
+              y: bodyBHeight * 0
+            },
             length: 2,
             stiffness: 0.3
           })
@@ -182,7 +257,10 @@ export default class Draggy {
     this.mouse = Matter.Mouse.create(this.canvas.elt);
     const mouseParams = {
       mouse: this.mouse,
-      constraint: { stiffness: 0.3, angularStiffness: 0.95 } as any
+      constraint: {
+        stiffness: 0.3,
+        angularStiffness: 0.95
+      } as any
     };
     this.mouseConstraint = Matter.MouseConstraint.create(
       this.engine,
@@ -242,14 +320,7 @@ export default class Draggy {
     this.p.translate(vertices[3].x, vertices[3].y);
     this.p.rotate(angle);
     const exp = this.findInAllById(label);
-    let content = exprToString(exp);
-    exp.parens.forEach((paren: Paren) => {
-      if (paren === Paren.LPAREN) {
-        content = `(${content}`;
-      } else if (paren === Paren.RPAREN) {
-        content = `${content})`;
-      }
-    });
+    const content = exprToStringWithParensContext(exp);
     this.p.text(content, 0, 0);
     this.p.pop();
   };
