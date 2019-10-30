@@ -133,6 +133,7 @@ export default class Draggy {
 
     return original !== s.sExpression(evaluated);
   };
+  // Is this necessary? The newly evaluated values are isolated from everything
   public merge = (p1: IExpr, p2: IExpr): IExpr => {
     if (isTerminal(p1.val) && isTerminal(p2.val)) {
       if (p1.val === p2.val) {
@@ -212,6 +213,10 @@ export default class Draggy {
       );
       return composite;
     }
+    // compositiion: pass iumages as dots. A live image as dots.
+    // Run concurrently; not effecting each other
+    // sizzle makes it evaporate eventually
+
     const childComposites = program.children.map(this.makeTextComposite);
     childComposites.forEach((comp: Matter.Composite, index: number) => {
       Matter.Composite.add(composite, comp);
