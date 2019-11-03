@@ -1,6 +1,8 @@
 import p5 from "p5";
 import { Env } from "./env";
 import Ball from "./things/Ball";
+import Big from "./things/Big";
+import Repeat from "./things/Repeat";
 // import Draggy from "./draggy";
 
 class Sketch {
@@ -28,7 +30,8 @@ class Sketch {
       // this.p.WEBGL
     );
     this.env = new Env(this.p, this.canvas);
-    this.env.addThing(new Ball(this.p, 0, 0, 15, {}));
+
+    // (Ball (Big (Repeat)))
     this.env.setup();
     // this.draggy = new Draggy(this.p, this.canvas, this.univers);
     // this.draggy.setup();
