@@ -29,6 +29,19 @@ export default class Ball extends Thing {
     Matter.World.add(this.world, nb.composite);
     if (nb.child) {
       nb.child.getEffect((name, payload) => {
+        if (name === "oscillate") {
+          console.log(payload);
+          nb.updateComposite(nb.id, c => {
+            const temp = Matter.Composite.create();
+            Matter.Composite.add(temp, c.bodies[0]);
+            Matter.Body.setVelocity(temp.bodies[0], {
+              x: 0,
+              y: payload
+            });
+            c.bodies[0] = temp.bodies[0];
+            return c;
+          });
+        }
         if (name === "big") {
           nb.updateComposite(nb.id, c => {
             const temp = Matter.Composite.create();

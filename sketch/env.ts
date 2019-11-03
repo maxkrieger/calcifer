@@ -5,6 +5,7 @@ import Attribute from "./things/Attribute";
 import Ball from "./things/Ball";
 import Big from "./things/Big";
 import Repeat from "./things/Repeat";
+import Oscillate from "./things/Oscillate";
 
 export type ICard = Thing | Attribute;
 
@@ -44,18 +45,25 @@ export class Env {
   };
   public setup() {
     this.engine.world.gravity.y = 0;
+    // this.addThing(
+    //   new Ball(
+    //     this.p,
+    //     this.engine.world,
+    //     this.updateComposite,
+    //     100,
+    //     100,
+    //     new Big(this.p, new Repeat())
+    //   )
+    // );
     this.addThing(
       new Ball(
         this.p,
         this.engine.world,
         this.updateComposite,
-        100,
-        100,
-        new Big(this.p, new Repeat())
+        200,
+        200,
+        new Oscillate(this.p, new Repeat())
       )
-    );
-    this.addThing(
-      new Ball(this.p, this.engine.world, this.updateComposite, 200, 200)
     );
     this.things.forEach(t => t.setup());
 
