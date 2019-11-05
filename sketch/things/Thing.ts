@@ -12,5 +12,7 @@ export default abstract class Thing extends Card {
 
   public abstract draw(): any;
 
+  public drawableChildren: Thing[] = [];
+
   public composite: Matter.Composite;
 }

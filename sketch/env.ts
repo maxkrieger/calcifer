@@ -46,6 +46,15 @@ export class Env {
         new Oscillate(this.p, new Repeat())
       )
     );
+    this.addThing(
+      new Ball(
+        this.p,
+        this.engine.world,
+        400,
+        400,
+        new Ball(this.p, this.engine.world, 450, 450)
+      )
+    );
     this.things.forEach(t => t.setup());
 
     this.mouse = Matter.Mouse.create(this.canvas.elt);
@@ -63,16 +72,12 @@ export class Env {
     this.mouseConstraint.mouse.pixelRatio = this.p.pixelDensity();
 
     Matter.World.add(this.engine.world, this.mouseConstraint);
+    Matter.Engine.run(this.engine);
   }
   public draw() {
-    Matter.Engine.update(this.engine);
+    // Matter.Engine.update(this.engine);
     this.things.forEach(t => {
-      const correspondingBody = Matter.Composite.allComposites(
-        this.engine.world
-      ).find(({ label }: Matter.Composite) => label === t.id);
-      if (correspondingBody) {
-        t.draw(correspondingBody);
-      }
+      t.draw();
     });
   }
 }
