@@ -7,8 +7,6 @@ import Big from "./things/Big";
 import Repeat from "./things/Repeat";
 import Oscillate from "./things/Oscillate";
 
-export type ICard = Thing | Attribute;
-
 export class Env {
   public mouse: Matter.Mouse;
   public mouseConstraint: Matter.MouseConstraint;
@@ -21,28 +19,12 @@ export class Env {
   constructor(p: p5, canvas: p5.Renderer) {
     this.p = p;
     this.canvas = canvas;
-    this.updateComposite.bind(this);
   }
   public addThing(thing: Thing) {
     thing.getEffect((name, payload) => {
       this.things.push(payload);
     });
   }
-  public updateComposite = (
-    id: string,
-    f: (c: Matter.Composite) => Matter.Composite
-  ) => {
-    const comp = Matter.Composite.allComposites(this.engine.world).find(
-      (composite: Matter.Composite) => id === composite.label
-    );
-    if (comp) {
-      const res = f(comp);
-      Matter.World.remove(this.engine.world, comp);
-      Matter.World.add(this.engine.world, res);
-    } else {
-      console.error(`Cannot find composite ${id}`);
-    }
-  };
   public setup() {
     this.engine.world.gravity.y = 0;
     // this.addThing(
@@ -59,7 +41,6 @@ export class Env {
       new Ball(
         this.p,
         this.engine.world,
-        this.updateComposite,
         200,
         200,
         new Oscillate(this.p, new Repeat())

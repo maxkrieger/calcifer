@@ -10,7 +10,7 @@ export default abstract class Thing extends Card {
 
   public abstract setup(): any;
 
-  public abstract draw(updatedComposite: Matter.Composite): any;
+  public abstract draw(): any;
 
   public composite: Matter.Composite;
 }
