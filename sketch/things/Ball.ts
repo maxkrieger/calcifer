@@ -1,8 +1,6 @@
 import * as p5 from "p5";
 import Matter from "matter-js";
 import Thing from "./Thing";
-import Big from "./Big";
-import Repeat from "./Repeat";
 import Card from "./Card";
 
 export default class Ball extends Thing {
@@ -17,10 +15,14 @@ export default class Ball extends Thing {
     if (nb.child) {
       nb.child.getEffect((name: string, payload: any) => {
         if (name === "oscillate") {
-          Matter.Body.setVelocity(nb.composite.bodies[0], {
-            x: 0,
-            y: payload
-          });
+          Matter.Body.applyForce(
+            nb.composite.bodies[0],
+            { x: 0, y: 0 },
+            {
+              x: 0,
+              y: 0.01 * payload
+            }
+          );
         }
         if (name === "big") {
           Matter.Body.scale(

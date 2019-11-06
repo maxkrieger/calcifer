@@ -6,6 +6,7 @@ import Ball from "./things/Ball";
 import Big from "./things/Big";
 import Repeat from "./things/Repeat";
 import Oscillate from "./things/Oscillate";
+import Emitter from "./things/Emitter";
 
 export class Env {
   public mouse: Matter.Mouse;
@@ -53,6 +54,21 @@ export class Env {
         400,
         400,
         new Ball(this.p, this.engine.world, 450, 450)
+      )
+    );
+    this.addThing(
+      new Emitter(
+        this.p,
+        this.engine.world,
+        100,
+        100,
+        new Ball(
+          this.p,
+          this.engine.world,
+          10,
+          10,
+          new Oscillate(this.p, new Repeat())
+        )
       )
     );
     this.things.forEach(t => t.setup());

@@ -11,7 +11,7 @@ export default class Oscillate extends Attribute {
     this.p = p;
   }
   public getEffect(cb: (name: string, payload: any) => void) {
-    this.state += 1;
+    this.state += 0.05;
     cb(this.name, Math.sin(this.state));
     if (this.child) {
       this.child.getEffect((effect, payload) => {

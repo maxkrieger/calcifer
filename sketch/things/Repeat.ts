@@ -7,7 +7,7 @@ export default class Repeat extends Attribute {
     this.child = child;
   }
   public getEffect(cb: (name: string, payload: any) => void) {
-    setInterval(() => cb("repeat", null), 500);
+    setInterval(() => cb("repeat", null), 50);
     if (this.child) {
       this.child.getEffect(cb);
     }
